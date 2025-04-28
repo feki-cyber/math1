@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Résolveur Mathématique</title>
+    <!-- Nouveau CDN plus fiable -->
+    <script src="https://cdn.jsdelivr.net/npm/mathjs@11.7.0/lib/browser/math.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Résolveur Mathématique</h1>
+    <p>Entrez une équation (ex: "3x + 5 = 20") :</p>
+    <input type="text" id="equation" placeholder="3x + 5 = 20">
+    <button onclick="solve()">Résoudre</button>
+    <div id="result"></div>
+
+    <script>
+        // Vérification que mathjs est bien chargé
+        if (typeof math === 'undefined') {
+            document.getElementById("result").innerHTML = 
+                '<p style="color:red">Erreur: La bibliothèque mathjs n\'a pas pu charger. Rechargez la page.</p>';
+        }
+
+        function solve() {
+            const equation = document.getElementById("equation").value.trim();
+            const resultDiv = document.getElementById("result");
+            
+            if (!equation) {
+                resultDiv.innerHTML = '<p style="color:red">Veuillez entrer une équation</p>';
+                return;
+            }
+
+            try {
+                // Transformation pour les équations
+                let expr = equation;
+                if (equation.includes('=')) {
+                    const parts = equation.split('=');
+                    if (parts.length !== 2) throw new Error("Format d'équation invalide");
+                    expr = `solve(${parts[0].trim()} - (${parts[1].trim()}), x)`;
+                }
+                
+                // Calcul avec mathjs
+                const result = math.evaluate(expr);
+                
+                // Affichage du résultat
+                if (Array.isArray(result)) {
+                    resultDiv.innerHTML = `<p>Solutions :<br><strong>${result.map((x, i) => `x${i+1} = ${x}`).join('<br>')}</strong></p>`;
+                } else {
+                    resultDiv.innerHTML = `<p>Résultat : <strong>${result}</strong></p>`;
+                }
+            } catch (e) {
+                resultDiv.innerHTML = `<p style="color:red">Erreur : ${e.message}<br>
+                Exemples valides :<br>
+                • 3x + 5 = 20<br>
+                • x^2 - 4 = 0<br>
+                • 2+3*4</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
