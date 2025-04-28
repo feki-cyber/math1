@@ -60,7 +60,7 @@
                 // Transformation pour mathjs
                 if (cleanEq.includes('=')) {
                     const parts = cleanEq.split('=');
-                    if (parts.length !== 2) throw new Error("Format invalide");
+                    if (parts.length !== 2) throw new erre ("Format invalide");
                     
                     // Création de l'expression résoluble
                     const expr = `(${parts[0]})-(${parts[1]})`;
