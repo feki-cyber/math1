@@ -3,333 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Math Solver Pro</title>
+    <title>Super Solveur Mathématique</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.7.0/mathjs.min.js"></script>
     <style>
-        :root {
-            --primary: #4CAF50;
-            --secondary: #2196F3;
-            --dark: #333;
-            --light: #f5f5f5;
-        }
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: var(--dark);
-            background-color: #f9f9f9;
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
             padding: 20px;
+            background-color: #f5f5f5;
         }
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
             background: white;
             border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        header {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
             padding: 20px;
-            text-align: center;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         h1 {
-            font-size: 2.2rem;
-            margin-bottom: 10px;
+            color: #2c3e50;
+            text-align: center;
         }
-        .tabs {
-            display: flex;
-            border-bottom: 1px solid #ddd;
-        }
-        .tab {
-            padding: 15px 25px;
-            cursor: pointer;
-            background: none;
-            border: none;
-            font-size: 1rem;
-            font-weight: bold;
-            color: var(--dark);
-            transition: all 0.3s;
-        }
-        .tab.active {
-            color: var(--primary);
-            border-bottom: 3px solid var(--primary);
-        }
-        .tab-content {
-            display: none;
-            padding: 30px;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        .input-group {
-            margin-bottom: 20px;
-        }
-        input, select, button {
+        input, button {
             width: 100%;
-            padding: 12px 15px;
-            margin: 8px 0;
-            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
             border-radius: 5px;
-            font-size: 1rem;
+            border: 1px solid #ddd;
         }
         button {
-            background-color: var(--primary);
+            background-color: #3498db;
             color: white;
             font-weight: bold;
             cursor: pointer;
-            transition: background 0.3s;
+            border: none;
         }
         button:hover {
-            background-color: #45a049;
+            background-color: #2980b9;
         }
-        .result-container {
-            margin-top: 30px;
-            border-top: 1px solid #eee;
-            padding-top: 20px;
-        }
-        .solution {
-            font-size: 1.2rem;
-            margin-bottom: 20px;
+        #result {
+            margin-top: 20px;
             padding: 15px;
-            background-color: var(--light);
+            background-color: #ecf0f1;
             border-radius: 5px;
         }
-        .steps {
-            margin-top: 20px;
+        #steps {
+            margin-top: 15px;
         }
         .step {
-            padding: 10px 15px;
-            margin-bottom: 10px;
-            background-color: #f0f0f0;
-            border-left: 4px solid var(--primary);
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            margin-bottom: 5px;
             border-radius: 0 5px 5px 0;
         }
         #graph {
             width: 100%;
             height: 400px;
-            margin-top: 30px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            margin-top: 20px;
         }
         .error {
-            color: #f44336;
-            padding: 10px;
-            background-color: #ffebee;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-        .history {
-            margin-top: 30px;
-        }
-        .history-item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-        }
-        .history-item:hover {
-            background-color: var(--light);
-        }
-        @media (max-width: 768px) {
-            .tabs {
-                flex-direction: column;
-            }
-            .tab {
-                border-bottom: 1px solid #ddd;
-            }
+            color: #e74c3c;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>Math Solver Pro</h1>
-            <p>Résolvez vos équations en un clic avec explications détaillées</p>
-        </header>
-
-        <div class="tabs">
-            <button class="tab active" data-tab="linear">1er Degré</button>
-            <button class="tab" data-tab="quadratic">2nd Degré</button>
-            <button class="tab" data-tab="graph">Graphique</button>
-            <button class="tab" data-tab="history">Historique</button>
-        </div>
-
-        <div id="linear" class="tab-content active">
-            <div class="input-group">
-                <label for="linear-equation">Équation linéaire (ax + b = c)</label>
-                <input type="text" id="linear-equation" placeholder="Ex: 3x + 5 = 20">
-                <button onclick="solveLinear()">Résoudre</button>
-            </div>
-
-            <div class="result-container">
-                <div id="linear-solution" class="solution"></div>
-                <div id="linear-steps" class="steps"></div>
-                <div id="linear-graph"></div>
-            </div>
-        </div>
-
-        <div id="quadratic" class="tab-content">
-            <div class="input-group">
-                <label for="quadratic-equation">Équation quadratique (ax² + bx + c = 0)</label>
-                <input type="text" id="quadratic-equation" placeholder="Ex: 2x² - 5x + 3 = 0">
-                <button onclick="solveQuadratic()">Résoudre</button>
-            </div>
-
-            <div class="result-container">
-                <div id="quadratic-solution" class="solution"></div>
-                <div id="quadratic-steps" class="steps"></div>
-                <div id="quadratic-graph"></div>
-            </div>
-        </div>
-
-        <div id="graph" class="tab-content">
-            <div id="combined-graph"></div>
-        </div>
-
-        <div id="history" class="tab-content">
-            <h2>Historique des Calculs</h2>
-            <div id="history-list" class="history"></div>
-            <button onclick="clearHistory()" style="background-color: #f44336;">Effacer l'historique</button>
-        </div>
+        <h1>Super Solveur Mathématique</h1>
+        
+        <label for="equation">Entrez votre équation :</label>
+        <input type="text" id="equation" placeholder="Ex: 3x² - 5x + 2 = 0 ou 4x + 8 = 0">
+        
+        <button onclick="solve()">Résoudre</button>
+        
+        <div id="result"></div>
+        <div id="steps"></div>
+        <div id="graph"></div>
     </div>
 
     <script>
-        // Gestion des onglets
-        document.querySelectorAll('.tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                
-                tab.classList.add('active');
-                document.getElementById(tab.dataset.tab).classList.add('active');
-                
-                if (tab.dataset.tab === 'graph') {
-                    updateCombinedGraph();
-                } else if (tab.dataset.tab === 'history') {
-                    loadHistory();
-                }
-            });
-        });
-
-        // Historique
-        function saveToHistory(type, equation, solution) {
-            let history = JSON.parse(localStorage.getItem('mathHistory')) || [];
-            history.unshift({
-                type,
-                equation,
-                solution,
-                timestamp: new Date().toISOString()
-            });
-            if (history.length > 20) history = history.slice(0, 20);
-            localStorage.setItem('mathHistory', JSON.stringify(history));
-        }
-
-        function loadHistory() {
-            const history = JSON.parse(localStorage.getItem('mathHistory')) || [];
-            const historyList = document.getElementById('history-list');
-            historyList.innerHTML = '';
+        function solve() {
+            const equation = document.getElementById("equation").value.trim();
+            const resultDiv = document.getElementById("result");
+            const stepsDiv = document.getElementById("steps");
             
-            if (history.length === 0) {
-                historyList.innerHTML = '<p>Aucun historique disponible</p>';
-                return;
-            }
-            
-            history.forEach((item, index) => {
-                const div = document.createElement('div');
-                div.className = 'history-item';
-                div.innerHTML = `
-                    <p><strong>${item.type === 'linear' ? '1er Degré' : '2nd Degré'}</strong>: ${item.equation}</p>
-                    <p>→ ${item.solution}</p>
-                    <small>${new Date(item.timestamp).toLocaleString()}</small>
-                `;
-                div.addEventListener('click', () => {
-                    if (item.type === 'linear') {
-                        document.querySelector('[data-tab="linear"]').click();
-                        document.getElementById('linear-equation').value = item.equation;
-                        solveLinear();
-                    } else {
-                        document.querySelector('[data-tab="quadratic"]').click();
-                        document.getElementById('quadratic-equation').value = item.equation;
-                        solveQuadratic();
-                    }
-                });
-                historyList.appendChild(div);
-            });
-        }
-
-        function clearHistory() {
-            localStorage.removeItem('mathHistory');
-            loadHistory();
-        }
-
-        // Résolution 1er degré
-        function solveLinear() {
-            const equation = document.getElementById('linear-equation').value.trim();
-            const solutionDiv = document.getElementById('linear-solution');
-            const stepsDiv = document.getElementById('linear-steps');
-            
-            solutionDiv.innerHTML = '';
+            resultDiv.innerHTML = '';
             stepsDiv.innerHTML = '';
             
             if (!equation) {
-                solutionDiv.innerHTML = '<div class="error">Veuillez entrer une équation</div>';
+                resultDiv.innerHTML = '<p class="error">Veuillez entrer une équation</p>';
                 return;
             }
 
             try {
-                // Parsing de l'équation
-                const parts = equation.split('=');
-                if (parts.length !== 2) throw new Error("Format invalide : doit contenir un '='");
-                
-                const left = parts[0].trim();
-                const right = parts[1].trim();
-                
-                addLinearStep(`Équation originale : <strong>${left} = ${right}</strong>`);
-                
-                // Extraction des coefficients
-                const leftParsed = parseLinearSide(left);
-                const rightParsed = parseLinearSide(right);
-                
-                const a = leftParsed.a - rightParsed.a;
-                const b = rightParsed.b - leftParsed.b;
-                
-                addLinearStep(`Forme standard : <strong>${a}x + ${b} = 0</strong>`);
-                
-                if (a === 0) {
-                    if (b === 0) {
-                        addLinearStep("0 = 0 → L'équation a une infinité de solutions");
-                        solutionDiv.innerHTML = '<p>Solution : <strong>∞ solutions (équation toujours vraie)</strong></p>';
-                    } else {
-                        addLinearStep(`${b} = 0 → Équation impossible`);
-                        solutionDiv.innerHTML = '<p>Solution : <strong>Aucune solution</strong></p>';
-                    }
-                    plotLinear(a, b, [], 'linear-graph');
-                    return;
+                // Détection automatique du type d'équation
+                if (equation.includes('x²') || equation.includes('x^2')) {
+                    solveQuadratic(equation);
+                } else if (equation.includes('x')) {
+                    solveLinear(equation);
+                } else {
+                    throw new Error("Type d'équation non reconnu");
                 }
-                
-                const solution = b / a;
-                addLinearStep(`Solution : x = ${b} / ${a} = <strong>${solution}</strong>`);
-                solutionDiv.innerHTML = `<p>Solution : <strong>x = ${solution}</strong></p>`;
-                
-                saveToHistory('linear', equation, `x = ${solution}`);
-                plotLinear(a, b, [solution], 'linear-graph');
             } catch (e) {
-                solutionDiv.innerHTML = `<div class="error">Erreur : ${e.message}<br>
-                Format attendu : <strong>ax + b = c</strong><br>
-                Exemples valides :<br>
-                • 3x + 5 = 20<br>
-                • x - 4 = 0<br>
-                • 2.5x = 10</div>`;
+                resultDiv.innerHTML = `<p class="error">Erreur : ${e.message}</p>`;
             }
         }
 
-        function parseLinearSide(side) {
+        function solveLinear(equation) {
+            addStep(`<strong>Équation linéaire détectée</strong> : ${equation}`);
+            
+            const parts = equation.split('=');
+            if (parts.length !== 2) throw new Error("Format invalide : doit contenir un '='");
+            
+            const left = parts[0].trim();
+            const right = parts[1].trim();
+            
+            addStep(`Réorganisation : ${left} - (${right}) = 0`);
+            
+            // Parsing robuste
+            const leftParsed = parseSide(left);
+            const rightParsed = parseSide(right);
+            
+            const a = leftParsed.a - rightParsed.a;
+            const b = rightParsed.b - leftParsed.b;
+            
+            addStep(`Forme standard : ${a}x + ${b} = 0`);
+            
+            if (a === 0) {
+                if (b === 0) {
+                    addStep("0 = 0 → ∞ solutions");
+                    showResult("∞ solutions (équation toujours vraie)");
+                } else {
+                    addStep("Équation impossible");
+                    showResult("Aucune solution");
+                }
+                return;
+            }
+            
+            const solution = (b / a).toFixed(4);
+            addStep(`Solution : x = ${b} / ${a} = ${solution}`);
+            showResult(`x = ${solution}`);
+            
+            // Graphique
+            plotLinear(a, b, [solution]);
+        }
+
+        function solveQuadratic(equation) {
+            addStep(`<strong>Équation quadratique détectée</strong> : ${equation}`);
+            
+            const parts = equation.split('=');
+            if (parts.length !== 2) throw new Error("Format invalide : doit contenir un '='");
+            
+            const left = parts[0].trim().replace(/\^2/g, '²');
+            const right = parts[1].trim();
+            
+            addStep(`Réorganisation : ${left} - (${right}) = 0`);
+            
+            // Parsing robuste
+            const { a, b, c } = parseQuadratic(left + ' - (' + right + ')');
+            addStep(`Forme standard : ${a}x² + ${b}x + ${c} = 0`);
+            
+            const discriminant = b*b - 4*a*c;
+            addStep(`Discriminant Δ = b² - 4ac = ${discriminant}`);
+            
+            if (discriminant < 0) {
+                const realPart = (-b / (2*a)).toFixed(4);
+                const imagPart = (Math.sqrt(-discriminant) / (2*a)).toFixed(4);
+                addStep("Δ < 0 → Solutions complexes");
+                showResult(`x₁ = ${realPart} + ${imagPart}i<br>x₂ = ${realPart} - ${imagPart}i`);
+            } 
+            else if (discriminant === 0) {
+                const x = (-b / (2*a)).toFixed(4);
+                addStep("Δ = 0 → Solution double");
+                showResult(`x = ${x} (solution double)`);
+            } 
+            else {
+                const x1 = ((-b + Math.sqrt(discriminant)) / (2*a)).toFixed(4);
+                const x2 = ((-b - Math.sqrt(discriminant)) / (2*a)).toFixed(4);
+                addStep("Δ > 0 → Deux solutions réelles");
+                showResult(`x₁ = ${x1}<br>x₂ = ${x2}`);
+            }
+            
+            // Graphique
+            plotQuadratic(a, b, c);
+        }
+
+        function parseSide(side) {
             let a = 0, b = 0;
             side = side.replace(/\s+/g, '')
                       .replace(/([+-])/g, ' $1')
@@ -338,97 +197,19 @@
             if (!side) return { a: 0, b: 0 };
             
             const terms = side.split(' ');
-            terms.forEach(term => {
+            for (let term of terms) {
+                if (!term) continue;
                 if (term.includes('x')) {
                     const coeff = term.replace('x', '');
-                    a += coeff === '+' ? 1 : coeff === '-' ? -1 : parseFloat(coeff);
-                } else if (term) {
-                    b += parseFloat(term);
+                    a += parseCoefficient(coeff);
+                } else {
+                    b += parseFloat(term) || 0;
                 }
-            });
-            
+            }
             return { a, b };
         }
 
-        function addLinearStep(text) {
-            const step = document.createElement('div');
-            step.className = 'step';
-            step.innerHTML = text;
-            document.getElementById('linear-steps').appendChild(step);
-        }
-
-        // Résolution 2nd degré
-        function solveQuadratic() {
-            const equation = document.getElementById('quadratic-equation').value.trim();
-            const solutionDiv = document.getElementById('quadratic-solution');
-            const stepsDiv = document.getElementById('quadratic-steps');
-            
-            solutionDiv.innerHTML = '';
-            stepsDiv.innerHTML = '';
-            
-            if (!equation) {
-                solutionDiv.innerHTML = '<div class="error">Veuillez entrer une équation</div>';
-                return;
-            }
-
-            try {
-                // Parsing de l'équation
-                const parts = equation.split('=');
-                if (parts.length !== 2) throw new Error("Format invalide : doit contenir un '='");
-                
-                const left = parts[0].trim().replace(/\^2/g, '²');
-                const right = parts[1].trim();
-                
-                addQuadraticStep(`Équation originale : <strong>${left} = ${right}</strong>`);
-                
-                // Extraction des coefficients
-                const { a, b, c } = parseQuadraticSide(left + ' - (' + right + ')');
-                addQuadraticStep(`Forme standard : <strong>${a}x² + ${b}x + ${c} = 0</strong>`);
-                
-                const discriminant = b*b - 4*a*c;
-                addQuadraticStep(`Discriminant Δ = b² - 4ac = ${b}² - 4×${a}×${c} = ${discriminant}`);
-                
-                if (discriminant < 0) {
-                    const realPart = -b/(2*a);
-                    const imagPart = Math.sqrt(-discriminant)/(2*a);
-                    addQuadraticStep("Δ < 0 → Solutions complexes conjuguées :");
-                    solutionDiv.innerHTML = `
-                        <p>Solutions complexes :<br>
-                        <strong>x₁ = ${realPart.toFixed(2)} + ${imagPart.toFixed(2)}i</strong><br>
-                        <strong>x₂ = ${realPart.toFixed(2)} - ${imagPart.toFixed(2)}i</strong></p>`;
-                    plotQuadratic(a, b, c, [], 'quadratic-graph');
-                } 
-                else if (discriminant === 0) {
-                    const x = -b/(2*a);
-                    addQuadraticStep(`Δ = 0 → Solution double : x = -b/(2a) = ${x}`);
-                    solutionDiv.innerHTML = `<p>Solution double : <strong>x = ${x}</strong></p>`;
-                    saveToHistory('quadratic', equation, `x = ${x}`);
-                    plotQuadratic(a, b, c, [x], 'quadratic-graph');
-                } 
-                else {
-                    const x1 = (-b + Math.sqrt(discriminant))/(2*a);
-                    const x2 = (-b - Math.sqrt(discriminant))/(2*a);
-                    addQuadraticStep(`Δ > 0 → Deux solutions réelles distinctes :`);
-                    addQuadraticStep(`x₁ = (-b + √Δ)/(2a) = ${x1.toFixed(2)}`);
-                    addQuadraticStep(`x₂ = (-b - √Δ)/(2a) = ${x2.toFixed(2)}`);
-                    solutionDiv.innerHTML = `
-                        <p>Solutions réelles :<br>
-                        <strong>x₁ = ${x1.toFixed(2)}</strong><br>
-                        <strong>x₂ = ${x2.toFixed(2)}</strong></p>`;
-                    saveToHistory('quadratic', equation, `x₁ = ${x1.toFixed(2)}, x₂ = ${x2.toFixed(2)}`);
-                    plotQuadratic(a, b, c, [x1, x2], 'quadratic-graph');
-                }
-            } catch (e) {
-                solutionDiv.innerHTML = `<div class="error">Erreur : ${e.message}<br>
-                Format attendu : <strong>ax² + bx + c = 0</strong><br>
-                Exemples valides :<br>
-                • 2x² - 5x + 3 = 0<br>
-                • x² - 4 = 0<br>
-                • 3x² + 2x = 0</div>`;
-            }
-        }
-
-        function parseQuadraticSide(expr) {
+        function parseQuadratic(expr) {
             expr = expr.replace(/\s+/g, '')
                       .replace(/²/g, '^2')
                       .replace(/([+-])/g, ' $1')
@@ -440,32 +221,40 @@
             for (let term of terms) {
                 if (!term) continue;
                 if (term.includes('x^2')) {
-                    const coeff = term.replace('x^2', '');
-                    a += coeff === '+' ? 1 : coeff === '-' ? -1 : parseFloat(coeff);
+                    a += parseCoefficient(term.replace('x^2', ''));
                 } else if (term.includes('x')) {
-                    const coeff = term.replace('x', '');
-                    b += coeff === '+' ? 1 : coeff === '-' ? -1 : parseFloat(coeff);
+                    b += parseCoefficient(term.replace('x', ''));
                 } else {
-                    c += parseFloat(term);
+                    c += parseFloat(term) || 0;
                 }
             }
             
             return { a, b, c };
         }
 
-        function addQuadraticStep(text) {
+        function parseCoefficient(coeff) {
+            if (coeff === '+') return 1;
+            if (coeff === '-') return -1;
+            if (coeff === '') return 1;
+            return parseFloat(coeff) || 0;
+        }
+
+        function addStep(text) {
             const step = document.createElement('div');
             step.className = 'step';
             step.innerHTML = text;
-            document.getElementById('quadratic-steps').appendChild(step);
+            document.getElementById('steps').appendChild(step);
         }
 
-        // Fonctions graphiques
-        function plotLinear(a, b, solutions, elementId) {
+        function showResult(html) {
+            document.getElementById('result').innerHTML = `<p>${html}</p>`;
+        }
+
+        function plotLinear(a, b, solutions) {
             const xValues = [];
             const yValues = [];
             
-            for (let x = -10; x <= 10; x += 0.1) {
+            for (let x = -10; x <= 10; x += 0.5) {
                 xValues.push(x);
                 yValues.push(a*x + b);
             }
@@ -477,29 +266,20 @@
                 name: `y = ${a}x + ${b}`
             };
             
-            const solutionMarkers = {
-                x: solutions,
-                y: solutions.map(x => a*x + b),
-                mode: 'markers',
-                marker: { size: 12, color: 'red' },
-                name: 'Solution(s)'
-            };
-            
-            const data = solutions.length ? [trace, solutionMarkers] : [trace];
-            
-            Plotly.newPlot(elementId, data, {
+            const layout = {
                 title: 'Représentation graphique',
                 xaxis: { title: 'x' },
-                yaxis: { title: 'y' },
-                margin: { t: 30, b: 40 }
-            });
+                yaxis: { title: 'y' }
+            };
+            
+            Plotly.newPlot('graph', [trace], layout);
         }
 
-        function plotQuadratic(a, b, c, solutions, elementId) {
+        function plotQuadratic(a, b, c) {
             const xValues = [];
             const yValues = [];
             
-            for (let x = -10; x <= 10; x += 0.1) {
+            for (let x = -10; x <= 10; x += 0.5) {
                 xValues.push(x);
                 yValues.push(a*x*x + b*x + c);
             }
@@ -511,37 +291,14 @@
                 name: `y = ${a}x² + ${b}x + ${c}`
             };
             
-            const solutionMarkers = {
-                x: solutions,
-                y: solutions.map(x => a*x*x + b*x + c),
-                mode: 'markers',
-                marker: { size: 12, color: 'red' },
-                name: 'Solution(s)'
-            };
-            
-            const data = solutions.length ? [trace, solutionMarkers] : [trace];
-            
-            Plotly.newPlot(elementId, data, {
+            const layout = {
                 title: 'Représentation graphique',
                 xaxis: { title: 'x' },
-                yaxis: { title: 'y' },
-                margin: { t: 30, b: 40 }
-            });
+                yaxis: { title: 'y' }
+            };
+            
+            Plotly.newPlot('graph', [trace], layout);
         }
-
-        function updateCombinedGraph() {
-            // Cette fonction pourrait combiner les deux graphiques
-            // Pour simplifier, affichons juste un message
-            document.getElementById('combined-graph').innerHTML = `
-                <p style="text-align: center; padding: 50px;">
-                    Le graphique combiné afficherait ici les équations des deux onglets
-                </p>`;
-        }
-
-        // Initialisation
-        document.addEventListener('DOMContentLoaded', () => {
-            loadHistory();
-        });
     </script>
 </body>
 </html>
