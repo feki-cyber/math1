@@ -807,4 +807,200 @@
                         document.getElementById('equationType').value = item.type;
                         document.getElementById('solveBtn').click();
                     });
-                    historyList.appendChild(li
+                    historyList.appendChild(li);
+                });
+            }
+            
+            // Initialisation de l'outil graphique
+            function initGraphingTool() {
+                // Gestion du type de graphique
+                document.getElementById('graphType').addEventListener('change', function() {
+                    const type = this.value;
+                    document.getElementById('function2dGroup').classList.toggle('d-none', type !== '2d');
+                    document.getElementById('function3dGroup').classList.toggle('d-none', type !== '3d');
+                    document.getElementById('yRangeGroup').classList.toggle('d-none', type !== '3d' && type !== 'parametric');
+                });
+                
+                // Bouton de tracé
+                document.getElementById('plotBtn').addEventListener('click', updateGraph);
+            }
+            
+            function updateGraph() {
+                const type = document.getElementById('graphType').value;
+                const xMin = parseFloat(document.getElementById('xMin').value);
+                const xMax = parseFloat(document.getElementById('xMax').value);
+                
+                try {
+                    if (type === '2d') {
+                        plot2DFunction();
+                    } else if (type === '3d') {
+                        plot3DFunction();
+                    } else {
+                        document.getElementById('graphContainer').innerHTML = `
+                            <div class="alert alert-info m-3">Fonctionnalité en développement</div>
+                        `;
+                    }
+                } catch (error) {
+                    document.getElementById('graphContainer').innerHTML = `
+                        <div class="alert alert-danger m-3">${error.message}</div>
+                    `;
+                }
+            }
+            
+            function plot2DFunction() {
+                const funcExpr = document.getElementById('function2d').value;
+                const xMin = parseFloat(document.getElementById('xMin').value);
+                const xMax = parseFloat(document.getElementById('xMax').value);
+                
+                if (!funcExpr) throw new Error("Veuillez entrer une fonction");
+                
+                const xValues = [];
+                const yValues = [];
+                
+                for (let x = xMin; x <= xMax; x += (xMax - xMin) / 100) {
+                    xValues.push(x);
+                    try {
+                        yValues.push(math.evaluate(funcExpr, { x }));
+                    } catch (e) {
+                        throw new Error("Expression invalide");
+                    }
+                }
+                
+                const trace = {
+                    x: xValues,
+                    y: yValues,
+                    type: 'scatter',
+                    mode: 'lines',
+                    name: `y = ${funcExpr}`
+                };
+                
+                Plotly.newPlot('graphContainer', [trace], {
+                    title: `Graphique de y = ${funcExpr}`,
+                    xaxis: { title: 'x', range: [xMin, xMax] },
+                    yaxis: { title: 'y' },
+                    margin: { t: 40, b: 40 }
+                });
+            }
+            
+            function plot3DFunction() {
+                const funcExpr = document.getElementById('function3d').value;
+                const xMin = parseFloat(document.getElementById('xMin').value);
+                const xMax = parseFloat(document.getElementById('xMax').value);
+                const yMin = parseFloat(document.getElementById('yMin').value);
+                const yMax = parseFloat(document.getElementById('yMax').value);
+                
+                if (!funcExpr) throw new Error("Veuillez entrer une fonction");
+                
+                const xValues = [], yValues = [], zValues = [];
+                
+                for (let x = xMin; x <= xMax; x += (xMax - xMin) / 20) {
+                    for (let y = yMin; y <= yMax; y += (yMax - yMin) / 20) {
+                        xValues.push(x);
+                        yValues.push(y);
+                        try {
+                            zValues.push(math.evaluate(funcExpr, { x, y }));
+                        } catch (e) {
+                            throw new Error("Expression invalide");
+                        }
+                    }
+                }
+                
+                const trace = {
+                    x: xValues,
+                    y: yValues,
+                    z: zValues,
+                    type: 'surface',
+                    name: `z = ${funcExpr}`
+                };
+                
+                Plotly.newPlot('graphContainer', [trace], {
+                    title: `Graphique 3D de z = ${funcExpr}`,
+                    scene: {
+                        xaxis: { title: 'x', range: [xMin, xMax] },
+                        yaxis: { title: 'y', range: [yMin, yMax] },
+                        zaxis: { title: 'z' }
+                    },
+                    margin: { t: 40, b: 40 }
+                });
+            }
+            
+            // Initialisation du chatbot
+            function initChatBot() {
+                const chatContainer = document.getElementById('chatContainer');
+                const chatInput = document.getElementById('chatInput');
+                const sendBtn = document.getElementById('sendChatBtn');
+                const startListeningBtn = document.getElementById('startListening');
+                
+                // Exemples rapides
+                document.querySelectorAll('[data-question]').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        chatInput.value = this.getAttribute('data-question');
+                        sendBtn.click();
+                    });
+                });
+                
+                // Envoi de message
+                sendBtn.addEventListener('click', function() {
+                    const question = chatInput.value.trim();
+                    if (!question) return;
+                    
+                    addChatMessage(question, 'user');
+                    chatInput.value = '';
+                    
+                    // Simuler une réponse (en production, utiliser une API)
+                    setTimeout(() => {
+                        const response = generateBotResponse(question);
+                        addChatMessage(response, 'bot');
+                    }, 1000);
+                });
+                
+                // Reconnaissance vocale
+                startListeningBtn.addEventListener('click', function() {
+                    if ('webkitSpeechRecognition' in window) {
+                        const recognition = new webkitSpeechRecognition();
+                        recognition.lang = 'fr-FR';
+                        recognition.onresult = function(event) {
+                            chatInput.value = event.results[0][0].transcript;
+                            sendBtn.click();
+                        };
+                        recognition.start();
+                    } else {
+                        alert("Reconnaissance vocale non supportée sur ce navigateur");
+                    }
+                });
+            }
+            
+            function addChatMessage(text, sender) {
+                const chatContainer = document.getElementById('chatContainer');
+                const messageDiv = document.createElement('div');
+                
+                messageDiv.className = `chat-message p-3 rounded ${sender === 'user' ? 'user-message' : 'bot-message'}`;
+                messageDiv.innerHTML = text;
+                
+                chatContainer.appendChild(messageDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+            
+            function generateBotResponse(question) {
+                // En production, remplacer par un appel à une API IA
+                const mathKeywords = {
+                    'dérivée': "Pour calculer la dérivée d'une fonction, utilisez la notation f'(x) ou df/dx.",
+                    'intégrale': "Une intégrale se calcule avec ∫ f(x) dx. Voulez-vous un exemple spécifique ?",
+                    'équation': "Je peux résoudre des équations linéaires et quadratiques. Essayez '2x + 3 = 7' ou 'x² - 4 = 0'",
+                    'théorème': "Je connais les théorèmes de Pythagore, Thalès, Bayes, etc. Lequel vous intéresse ?",
+                    'matrice': "Les opérations sur les matrices sont disponibles dans l'onglet Outils."
+                };
+                
+                const lowerQuestion = question.toLowerCase();
+                for (const [keyword, response] of Object.entries(mathKeywords)) {
+                    if (lowerQuestion.includes(keyword)) {
+                        return response;
+                    }
+                }
+                
+                return "Je suis un assistant mathématique. Posez-moi des questions sur les équations, calculs, graphiques, etc.";
+            }
+        });
+    </script>
+</body>
+</html>
