@@ -1,1006 +1,287 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Math Genius - La Calculatrice Ultime</title>
-    <!-- CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bibliothèques JS -->
+    <title>Résolveur 1er/2nd Degré</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.7.0/mathjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
-        :root {
-            --primary: #4e73df;
-            --secondary: #1cc88a;
-            --dark: #5a5c69;
-            --light: #f8f9fc;
-        }
-        body {
-            font-family: 'Nunito', sans-serif;
-            background-color: var(--light);
-        }
-        #app {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .math-editor {
-            min-height: 100px;
-            border: 1px solid #ddd;
-            padding: 15px;
-            margin-bottom: 20px;
-            background: white;
-            border-radius: 5px;
-        }
-        .graph-container {
-            height: 500px;
-            background: white;
-            border-radius: 5px;
-            box-shadow: 0 0.15rem 0.35rem rgba(0,0,0,.1);
-        }
-        .chat-message {
-            max-width: 80%;
-            margin-bottom: 10px;
-        }
-        .user-message {
-            margin-left: auto;
-            background: var(--primary);
-            color: white;
-        }
-        .bot-message {
-            margin-right: auto;
-            background: var(--light);
-        }
-        .feature-card {
-            transition: transform 0.3s;
-        }
-        .feature-card:hover {
-            transform: translateY(-5px);
-        }
-        .tab-content {
-            padding: 20px 0;
-        }
-        .history-item:hover {
-            background-color: rgba(78, 115, 223, 0.1);
-            cursor: pointer;
-        }
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .container { display: flex; flex-wrap: wrap; gap: 20px; }
+        .panel { flex: 1; min-width: 300px; }
+        input, button { padding: 10px; margin: 5px 0; width: 100%; }
+        button { background: #4CAF50; color: white; border: none; cursor: pointer; }
+        #graph { width: 100%; height: 400px; }
+        .step { background: #f0f0f0; padding: 10px; margin: 5px 0; border-radius: 5px; }
+        .error { color: red; }
+        .toggle { display: flex; justify-content: center; margin: 15px 0; }
+        .toggle-btn { padding: 8px 15px; background: #ddd; border: none; cursor: pointer; }
+        .toggle-btn.active { background: #4CAF50; color: white; }
     </style>
 </head>
 <body>
-    <div id="app">
-        <!-- Header -->
-        <header class="text-center mb-5">
-            <h1 class="display-4 fw-bold text-gradient">
-                <span class="text-primary">Math</span> 
-                <span class="text-secondary">Genius</span>
-            </h1>
-            <p class="lead">Votre assistant mathématique tout-en-un</p>
-        </header>
+    <h1>Résolveur d'Équations</h1>
+    
+    <div class="toggle">
+        <button class="toggle-btn active" onclick="setDegree(1)">1er Degré</button>
+        <button class="toggle-btn" onclick="setDegree(2)">2nd Degré</button>
+    </div>
 
-        <!-- Main Tabs -->
-        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="solver-tab" data-bs-toggle="tab" data-bs-target="#solver" type="button">Solveur</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="graph-tab" data-bs-toggle="tab" data-bs-target="#graph" type="button">Graphiques</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="chat-tab" data-bs-toggle="tab" data-bs-target="#chat" type="button">Assistant IA</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="tools-tab" data-bs-toggle="tab" data-bs-target="#tools" type="button">Outils</button>
-            </li>
-        </ul>
-
-        <div class="tab-content" id="mainTabsContent">
-            <!-- Solveur Tab -->
-            <div class="tab-pane fade show active" id="solver" role="tabpanel">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card mb-4">
-                            <div class="card-header bg-primary text-white">
-                                <h5 class="mb-0">Entrée d'équation</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label class="form-label">Type d'équation</label>
-                                    <select class="form-select" id="equationType">
-                                        <option value="linear">Linéaire (1er degré)</option>
-                                        <option value="quadratic">Quadratique (2nd degré)</option>
-                                        <option value="system">Système d'équations</option>
-                                        <option value="calculus">Calcul différentiel/intégral</option>
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Saisie</label>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" id="equationInput" placeholder="Ex: 3x² - 5x + 2 = 0">
-                                        <button class="btn btn-outline-secondary" type="button" id="scanEquation">
-                                            <i class="fas fa-camera"></i>
-                                        </button>
-                                    </div>
-                                    <input type="file" id="equationImage" accept="image/*" style="display: none;">
-                                </div>
-                                <div class="math-editor" id="mathEditor" contenteditable="true"></div>
-                                <button class="btn btn-primary w-100" id="solveBtn">Résoudre</button>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header bg-primary text-white">
-                                <h5 class="mb-0">Historique</h5>
-                            </div>
-                            <div class="card-body p-0">
-                                <ul class="list-group list-group-flush" id="historyList"></ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <div class="card h-100">
-                            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Résultats</h5>
-                                <div>
-                                    <button class="btn btn-sm btn-light me-2" id="copyResult">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-light" id="exportResult">
-                                        <i class="fas fa-file-export"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="card-body">
-                                <div id="solutionSteps" class="mb-4"></div>
-                                <div id="finalResult" class="p-3 bg-light rounded"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Graphiques Tab -->
-            <div class="tab-pane fade" id="graph" role="tabpanel">
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="card mb-4">
-                            <div class="card-header bg-primary text-white">
-                                <h5 class="mb-0">Paramètres du graphique</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label class="form-label">Type de graphique</label>
-                                    <select class="form-select" id="graphType">
-                                        <option value="2d">2D (y = f(x))</option>
-                                        <option value="3d">3D (z = f(x,y))</option>
-                                        <option value="parametric">Paramétrique</option>
-                                        <option value="polar">Polaire</option>
-                                    </select>
-                                </div>
-                                <div class="mb-3" id="function2dGroup">
-                                    <label class="form-label">Fonction (y = ...)</label>
-                                    <input type="text" class="form-control" id="function2d" placeholder="Ex: sin(x) + x^2">
-                                </div>
-                                <div class="mb-3 d-none" id="function3dGroup">
-                                    <label class="form-label">Fonction (z = ...)</label>
-                                    <input type="text" class="form-control" id="function3d" placeholder="Ex: x^2 + y^2">
-                                </div>
-                                <div class="row">
-                                    <div class="col">
-                                        <label class="form-label">X min</label>
-                                        <input type="number" class="form-control" id="xMin" value="-10">
-                                    </div>
-                                    <div class="col">
-                                        <label class="form-label">X max</label>
-                                        <input type="number" class="form-control" id="xMax" value="10">
-                                    </div>
-                                </div>
-                                <div class="row mt-2 d-none" id="yRangeGroup">
-                                    <div class="col">
-                                        <label class="form-label">Y min</label>
-                                        <input type="number" class="form-control" id="yMin" value="-10">
-                                    </div>
-                                    <div class="col">
-                                        <label class="form-label">Y max</label>
-                                        <input type="number" class="form-control" id="yMax" value="10">
-                                    </div>
-                                </div>
-                                <button class="btn btn-primary w-100 mt-3" id="plotBtn">Tracer</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-8">
-                        <div class="card h-100">
-                            <div class="card-header bg-success text-white">
-                                <h5 class="mb-0">Visualisation</h5>
-                            </div>
-                            <div class="card-body p-0">
-                                <div id="graphContainer" class="graph-container"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Chat Tab -->
-            <div class="tab-pane fade" id="chat" role="tabpanel">
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="card mb-4">
-                            <div class="card-header bg-primary text-white">
-                                <h5 class="mb-0">Paramètres IA</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label class="form-label">Modèle</label>
-                                    <select class="form-select" id="aiModel">
-                                        <option value="gpt-3.5">GPT-3.5 (Rapide)</option>
-                                        <option value="gpt-4">GPT-4 (Précis)</option>
-                                        <option value="wolfram">Wolfram Alpha (Calculs)</option>
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Style d'explication</label>
-                                    <select class="form-select" id="explanationStyle">
-                                        <option value="simple">Simple</option>
-                                        <option value="detailed">Détaillé</option>
-                                        <option value="visual">Visuel</option>
-                                        <option value="formal">Formel (LaTeX)</option>
-                                    </select>
-                                </div>
-                                <div class="form-check form-switch mb-3">
-                                    <input class="form-check-input" type="checkbox" id="voiceOutput">
-                                    <label class="form-check-label" for="voiceOutput">Sortie vocale</label>
-                                </div>
-                                <hr>
-                                <h6>Exemples rapides :</h6>
-                                <button class="btn btn-sm btn-outline-primary mb-2 w-100" data-question="Explique-moi les dérivées">Dérivées</button>
-                                <button class="btn btn-sm btn-outline-primary mb-2 w-100" data-question="Comment résoudre une équation quadratique ?">Équations quadratiques</button>
-                                <button class="btn btn-sm btn-outline-primary w-100" data-question="Donne-moi un exemple d'intégrale">Intégrales</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-8">
-                        <div class="card h-100">
-                            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Assistant Mathématique</h5>
-                                <button class="btn btn-sm btn-light" id="startListening">
-                                    <i class="fas fa-microphone"></i>
-                                </button>
-                            </div>
-                            <div class="card-body">
-                                <div id="chatContainer" style="height: 400px; overflow-y: auto; margin-bottom: 15px;">
-                                    <div class="chat-message bot-message p-3 rounded">
-                                        Bonjour ! Je suis votre assistant en mathématiques. Posez-moi vos questions.
-                                    </div>
-                                </div>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="chatInput" placeholder="Posez votre question mathématique...">
-                                    <button class="btn btn-primary" id="sendChatBtn">
-                                        <i class="fas fa-paper-plane"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Outils Tab -->
-            <div class="tab-pane fade" id="tools" role="tabpanel">
-                <div class="row">
-                    <div class="col-md-4 mb-4">
-                        <div class="card feature-card h-100">
-                            <div class="card-body text-center">
-                                <i class="fas fa-calculator fa-3x mb-3 text-primary"></i>
-                                <h5>Calculatrice Scientifique</h5>
-                                <p>Accédez à toutes les fonctions mathématiques avancées</p>
-                                <button class="btn btn-outline-primary" id="openCalculator">Ouvrir</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4">
-                        <div class="card feature-card h-100">
-                            <div class="card-body text-center">
-                                <i class="fas fa-book fa-3x mb-3 text-primary"></i>
-                                <h5>Formulaire Mathématique</h5>
-                                <p>Bibliothèque complète de formules et théorèmes</p>
-                                <button class="btn btn-outline-primary" id="openFormulas">Ouvrir</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4">
-                        <div class="card feature-card h-100">
-                            <div class="card-body text-center">
-                                <i class="fas fa-project-diagram fa-3x mb-3 text-primary"></i>
-                                <h5>Solveur de Matrices</h5>
-                                <p>Résolution de systèmes linéaires et opérations matricielles</p>
-                                <button class="btn btn-outline-primary" id="openMatrixSolver">Ouvrir</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4">
-                        <div class="card feature-card h-100">
-                            <div class="card-body text-center">
-                                <i class="fas fa-chart-pie fa-3x mb-3 text-primary"></i>
-                                <h5>Analyse Statistique</h5>
-                                <p>Calculs statistiques et représentations graphiques</p>
-                                <button class="btn btn-outline-primary" id="openStatsTool">Ouvrir</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4">
-                        <div class="card feature-card h-100">
-                            <div class="card-body text-center">
-                                <i class="fas fa-infinity fa-3x mb-3 text-primary"></i>
-                                <h5>Calcul Formel</h5>
-                                <p>Dérivées, intégrales, limites et développements</p>
-                                <button class="btn btn-outline-primary" id="openCalculusTool">Ouvrir</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4">
-                        <div class="card feature-card h-100">
-                            <div class="card-body text-center">
-                                <i class="fas fa-language fa-3x mb-3 text-primary"></i>
-                                <h5>Traduction Mathématique</h5>
-                                <p>Convertissez les problèmes entre langues naturelles et formelles</p>
-                                <button class="btn btn-outline-primary" id="openTranslator">Ouvrir</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <div class="container">
+        <div class="panel">
+            <h2 id="degree-title">Équation du 1er Degré</h2>
+            <input type="text" id="equation" placeholder="3x + 5 = 20">
+            <button onclick="solve()">Résoudre</button>
+            <div id="solution"></div>
+            <div id="steps"></div>
+        </div>
+        <div class="panel">
+            <h2>Représentation Graphique</h2>
+            <div id="graph"></div>
         </div>
     </div>
 
-    <!-- Modals -->
-    <div class="modal fade" id="calculatorModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Calculatrice Scientifique</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <div class="calculator-display bg-light p-3 mb-3 text-end fs-3">0</div>
-                            <div class="calculator-buttons">
-                                <div class="row mb-2">
-                                    <div class="col"><button class="btn btn-secondary w-100 calc-btn" value="sin(">sin</button></div>
-                                    <div class="col"><button class="btn btn-secondary w-100 calc-btn" value="cos(">cos</button></div>
-                                    <div class="col"><button class="btn btn-secondary w-100 calc-btn" value="tan(">tan</button></div>
-                                    <div class="col"><button class="btn btn-danger w-100" id="calcClear">C</button></div>
-                                </div>
-                                <div class="row mb-2">
-                                    <div class="col"><button class="btn btn-secondary w-100 calc-btn" value="log(">log</button></div>
-                                    <div class="col"><button class="btn btn-secondary w-100 calc-btn" value="ln(">ln</button></div>
-                                    <div class="col"><button class="btn btn-secondary w-100 calc-btn" value="√(">√</button></div>
-                                    <div class="col"><button class="btn btn-warning w-100 calc-btn" value="^">^</button></div>
-                                </div>
-                                <div class="row mb-2">
-                                    <div class="col"><button class="btn btn-outline-secondary w-100 calc-btn" value="7">7</button></div>
-                                    <div class="col"><button class="btn btn-outline-secondary w-100 calc-btn" value="8">8</button></div>
-                                    <div class="col"><button class="btn btn-outline-secondary w-100 calc-btn" value="9">9</button></div>
-                                    <div class="col"><button class="btn btn-outline-secondary w-100 calc-btn" value="/">/</button></div>
-                                </div>
-                                <div class="row mb-2">
-                                    <div class="col"><button class="btn btn-outline-secondary w-100 calc-btn" value="4">4</button></div>
-                                    <div class="col"><button class="btn btn-outline-secondary w-100 calc-btn" value="5">5</button></div>
-                                    <div class="col"><button class="btn btn-outline-secondary w-100 calc-btn" value="6">6</button></div>
-                                    <div class="col"><button class="btn btn-outline-secondary w-100 calc-btn" value="*">×</button></div>
-                                </div>
-                                <div class="row mb-2">
-                                    <div class="col"><button class="btn btn-outline-secondary w-100 calc-btn" value="1">1</button></div>
-                                    <div class="col"><button class="btn btn-outline-secondary w-100 calc-btn" value="2">2</button></div>
-                                    <div class="col"><button class="btn btn-outline-secondary w-100 calc-btn" value="3">3</button></div>
-                                    <div class="col"><button class="btn btn-outline-secondary w-100 calc-btn" value="-">-</button></div>
-                                </div>
-                                <div class="row">
-                                    <div class="col"><button class="btn btn-outline-secondary w-100 calc-btn" value="0">0</button></div>
-                                    <div class="col"><button class="btn btn-outline-secondary w-100 calc-btn" value=".">.</button></div>
-                                    <div class="col"><button class="btn btn-primary w-100" id="calcEqual">=</button></div>
-                                    <div class="col"><button class="btn btn-outline-secondary w-100 calc-btn" value="+">+</button></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card h-100">
-                                <div class="card-header">
-                                    <h6>Constantes scientifiques</h6>
-                                </div>
-                                <div class="card-body">
-                                    <button class="btn btn-sm btn-outline-primary mb-2 w-100 calc-btn" value="π">π</button>
-                                    <button class="btn btn-sm btn-outline-primary mb-2 w-100 calc-btn" value="e">e</button>
-                                    <button class="btn btn-sm btn-outline-primary mb-2 w-100 calc-btn" value="(">(</button>
-                                    <button class="btn btn-sm btn-outline-primary mb-2 w-100 calc-btn" value=")">)</button>
-                                    <hr>
-                                    <h6>Mémoire</h6>
-                                    <button class="btn btn-sm btn-outline-success mb-2 w-100" id="calcMemAdd">M+</button>
-                                    <button class="btn btn-sm btn-outline-warning mb-2 w-100" id="calcMemRecall">MR</button>
-                                    <button class="btn btn-sm btn-outline-danger w-100" id="calcMemClear">MC</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <script>
-        // Initialisation de l'application
-        document.addEventListener('DOMContentLoaded', function() {
-            // Variables globales
-            let memory = 0;
-            let history = JSON.parse(localStorage.getItem('mathHistory')) || [];
-            
-            // Initialiser les composants
-            initCalculator();
-            initEquationSolver();
-            initGraphingTool();
-            initChatBot();
-            loadHistory();
-            
-            // Gestion des onglets
-            document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
-                tab.addEventListener('shown.bs.tab', function(event) {
-                    if (event.target.id === 'graph-tab') {
-                        updateGraph();
-                    }
-                });
+        let currentDegree = 1;
+        let currentEquation = '';
+
+        function setDegree(degree) {
+            currentDegree = degree;
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.textContent) === degree);
             });
+            document.getElementById("degree-title").textContent = 
+                `Équation du ${degree}${degree === 1 ? 'er' : 'nd'} Degré`;
+            document.getElementById("equation").placeholder = 
+                degree === 1 ? "3x + 5 = 20" : "2x² - 5x + 3 = 0";
+            solve(); // Re-résout l'équation avec le nouveau degré
+        }
+
+        function solve() {
+            const equation = document.getElementById("equation").value.trim();
+            currentEquation = equation;
             
-            // Initialisation de la calculatrice
-            function initCalculator() {
-                const display = document.querySelector('.calculator-display');
-                let currentInput = '0';
-                let resetInput = false;
-                
-                // Gestion des boutons
-                document.querySelectorAll('.calc-btn').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        if (currentInput === '0' || resetInput) {
-                            currentInput = this.value;
-                            resetInput = false;
-                        } else {
-                            currentInput += this.value;
-                        }
-                        display.textContent = currentInput;
-                    });
-                });
-                
-                // Égal
-                document.getElementById('calcEqual').addEventListener('click', function() {
-                    try {
-                        currentInput = math.evaluate(currentInput).toString();
-                        display.textContent = currentInput;
-                        resetInput = true;
-                    } catch (e) {
-                        display.textContent = 'Erreur';
-                        currentInput = '0';
-                        resetInput = true;
-                    }
-                });
-                
-                // Effacer
-                document.getElementById('calcClear').addEventListener('click', function() {
-                    currentInput = '0';
-                    display.textContent = currentInput;
-                });
-                
-                // Mémoire
-                document.getElementById('calcMemAdd').addEventListener('click', function() {
-                    try {
-                        memory += parseFloat(math.evaluate(currentInput));
-                    } catch (e) {
-                        alert('Valeur invalide pour la mémoire');
-                    }
-                });
-                
-                document.getElementById('calcMemRecall').addEventListener('click', function() {
-                    currentInput = memory.toString();
-                    display.textContent = currentInput;
-                });
-                
-                document.getElementById('calcMemClear').addEventListener('click', function() {
-                    memory = 0;
-                });
-                
-                // Ouvrir la calculatrice
-                document.getElementById('openCalculator').addEventListener('click', function() {
-                    const modal = new bootstrap.Modal(document.getElementById('calculatorModal'));
-                    modal.show();
-                });
+            document.getElementById("solution").innerHTML = '';
+            document.getElementById("steps").innerHTML = '';
+            
+            if (!equation) {
+                document.getElementById("solution").innerHTML = 
+                    '<p class="error">Veuillez entrer une équation</p>';
+                return;
             }
-            
-            // Initialisation du solveur d'équations
-            function initEquationSolver() {
-                // Reconnaissance d'image
-                document.getElementById('scanEquation').addEventListener('click', function() {
-                    document.getElementById('equationImage').click();
-                });
-                
-                document.getElementById('equationImage').addEventListener('change', function(e) {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    
-                    Tesseract.recognize(file, 'eng', {
-                        logger: m => console.log(m)
-                    }).then(({ data: { text } }) => {
-                        document.getElementById('equationInput').value = text;
-                    });
-                });
-                
-                // Résolution d'équation
-                document.getElementById('solveBtn').addEventListener('click', function() {
-                    const equationType = document.getElementById('equationType').value;
-                    const equationInput = document.getElementById('equationInput').value.trim();
-                    
-                    if (!equationInput) {
-                        alert('Veuillez entrer une équation');
-                        return;
-                    }
-                    
-                    try {
-                        let solution, steps;
-                        
-                        switch(equationType) {
-                            case 'linear':
-                                ({ solution, steps } = solveLinearEquation(equationInput));
-                                break;
-                            case 'quadratic':
-                                ({ solution, steps } = solveQuadraticEquation(equationInput));
-                                break;
-                            case 'system':
-                                solution = "Fonctionnalité en développement";
-                                steps = ["Nous travaillons sur le solveur de systèmes"];
-                                break;
-                            case 'calculus':
-                                solution = "Fonctionnalité en développement";
-                                steps = ["Nous travaillons sur le calcul formel"];
-                                break;
-                            default:
-                                throw new Error("Type d'équation non supporté");
-                        }
-                        
-                        // Affichage des résultats
-                        displaySolution(solution, steps);
-                        
-                        // Ajout à l'historique
-                        addToHistory(equationType, equationInput, solution);
-                        
-                    } catch (error) {
-                        document.getElementById('finalResult').innerHTML = `
-                            <div class="alert alert-danger">${error.message}</div>
-                        `;
-                    }
-                });
-                
-                // Copier le résultat
-                document.getElementById('copyResult').addEventListener('click', function() {
-                    const result = document.getElementById('finalResult').textContent;
-                    navigator.clipboard.writeText(result);
-                    alert('Résultat copié !');
-                });
-                
-                // Exporter le résultat
-                document.getElementById('exportResult').addEventListener('click', function() {
-                    const element = document.getElementById('finalResult');
-                    html2canvas(element).then(canvas => {
-                        const pdf = new jspdf.jsPDF();
-                        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10);
-                        pdf.save('resultat-math.pdf');
-                    });
-                });
-            }
-            
-            // Fonctions de résolution
-            function solveLinearEquation(equation) {
-                const steps = [];
-                steps.push(`<strong>Équation originale</strong>: ${equation}`);
-                
-                // Parsing
-                const parts = equation.split('=');
-                if (parts.length !== 2) throw new Error("Format d'équation invalide");
-                
-                const left = parts[0].trim();
-                const right = parts[1].trim();
-                
-                steps.push(`Réorganisation: ${left} - (${right}) = 0`);
-                
-                // Extraction des coefficients
-                const leftParsed = parseLinearSide(left);
-                const rightParsed = parseLinearSide(right);
-                
-                const a = leftParsed.a - rightParsed.a;
-                const b = rightParsed.b - leftParsed.b;
-                
-                steps.push(`Forme standard: ${a}x + ${b} = 0`);
-                
-                if (a === 0) {
-                    if (b === 0) {
-                        steps.push("0 = 0 → L'équation a une infinité de solutions");
-                        return {
-                            solution: "∞ solutions (équation toujours vraie)",
-                            steps
-                        };
-                    } else {
-                        steps.push(`${b} = 0 → Équation impossible`);
-                        return {
-                            solution: "Aucune solution",
-                            steps
-                        };
-                    }
-                }
-                
-                const solution = (b / a).toFixed(4);
-                steps.push(`Solution: x = ${b} / ${a} = ${solution}`);
-                
-                return {
-                    solution: `x = ${solution}`,
-                    steps
-                };
-            }
-            
-            function solveQuadraticEquation(equation) {
-                const steps = [];
-                steps.push(`<strong>Équation originale</strong>: ${equation}`);
-                
-                // Parsing
-                const parts = equation.split('=');
-                if (parts.length !== 2) throw new Error("Format d'équation invalide");
-                
-                const left = parts[0].trim().replace(/\^2/g, '²');
-                const right = parts[1].trim();
-                
-                steps.push(`Réorganisation: ${left} - (${right}) = 0`);
-                
-                // Extraction des coefficients
-                const { a, b, c } = parseQuadraticSide(left + ' - (' + right + ')');
-                steps.push(`Forme standard: ${a}x² + ${b}x + ${c} = 0`);
-                
-                const discriminant = b*b - 4*a*c;
-                steps.push(`Discriminant Δ = b² - 4ac = ${discriminant}`);
-                
-                if (discriminant < 0) {
-                    const realPart = (-b / (2*a)).toFixed(4);
-                    const imagPart = (Math.sqrt(-discriminant) / (2*a)).toFixed(4);
-                    steps.push("Δ < 0 → Solutions complexes conjuguées");
-                    return {
-                        solution: `x₁ = ${realPart} + ${imagPart}i<br>x₂ = ${realPart} - ${imagPart}i`,
-                        steps
-                    };
-                } else if (discriminant === 0) {
-                    const x = (-b / (2*a)).toFixed(4);
-                    steps.push("Δ = 0 → Solution double");
-                    return {
-                        solution: `x = ${x} (solution double)`,
-                        steps
-                    };
+
+            try {
+                if (currentDegree === 1) {
+                    solveLinear(equation);
                 } else {
-                    const x1 = ((-b + Math.sqrt(discriminant)) / (2*a)).toFixed(4);
-                    const x2 = ((-b - Math.sqrt(discriminant)) / (2*a)).toFixed(4);
-                    steps.push("Δ > 0 → Deux solutions réelles distinctes");
-                    return {
-                        solution: `x₁ = ${x1}<br>x₂ = ${x2}`,
-                        steps
-                    };
+                    solveQuadratic(equation);
+                }
+            } catch (e) {
+                document.getElementById("solution").innerHTML = 
+                    `<p class="error">Erreur: ${e.message}</p>`;
+            }
+        }
+
+        function solveLinear(eq) {
+            addStep(`<strong>Équation linéaire</strong>: ${eq}`);
+            
+            // Normalisation
+            const parts = eq.split('=');
+            if (parts.length !== 2) throw new Error("Format invalide: utilisez un '='");
+            
+            const left = parts[0].trim();
+            const right = parts[1].trim();
+            
+            addStep(`Réorganisation: ${left} - (${right}) = 0`);
+            
+            // Parsing
+            const leftParsed = parseSide(left);
+            const rightParsed = parseSide(right);
+            
+            const a = leftParsed.a - rightParsed.a;
+            const b = rightParsed.b - leftParsed.b;
+            
+            addStep(`Forme standard: ${a}x + ${b} = 0`);
+            
+            if (a === 0) {
+                if (b === 0) {
+                    addStep("0 = 0 → L'équation a ∞ solutions");
+                    document.getElementById("solution").innerHTML = 
+                        "<p>Solution: <strong>∞ solutions (équation toujours vraie)</strong></p>";
+                } else {
+                    addStep(`${b} = 0 → Équation impossible`);
+                    document.getElementById("solution").innerHTML = 
+                        "<p>Solution: <strong>Aucune solution</strong></p>";
+                }
+                plotLinear(a, b, []);
+                return;
+            }
+            
+            const solution = b / a;
+            addStep(`Solution: x = ${b} / ${a} = ${solution}`);
+            document.getElementById("solution").innerHTML = 
+                `<p>Solution: <strong>x = ${solution}</strong></p>`;
+            
+            plotLinear(a, b, [solution]);
+        }
+
+        function solveQuadratic(eq) {
+            addStep(`<strong>Équation quadratique</strong>: ${eq}`);
+            
+            // Normalisation
+            const parts = eq.split('=');
+            if (parts.length !== 2) throw new Error("Format invalide: utilisez un '='");
+            
+            const left = parts[0].trim().replace(/\^2/g, '²');
+            const right = parts[1].trim();
+            
+            addStep(`Réorganisation: ${left} - (${right}) = 0`);
+            
+            // Parsing
+            const { a, b, c } = parseQuadratic(left + ' - (' + right + ')');
+            addStep(`Forme standard: ${a}x² + ${b}x + ${c} = 0`);
+            
+            const discriminant = b*b - 4*a*c;
+            addStep(`Discriminant Δ = b² - 4ac = ${b}² - 4×${a}×${c} = ${discriminant}`);
+            
+            if (discriminant < 0) {
+                const realPart = -b/(2*a);
+                const imagPart = Math.sqrt(-discriminant)/(2*a);
+                addStep("Δ < 0 → Solutions complexes conjuguées");
+                document.getElementById("solution").innerHTML = `
+                    <p>Solutions complexes:<br>
+                    <strong>x₁ = ${realPart.toFixed(2)} + ${imagPart.toFixed(2)}i</strong><br>
+                    <strong>x₂ = ${realPart.toFixed(2)} - ${imagPart.toFixed(2)}i</strong></p>`;
+                plotQuadratic(a, b, c, []);
+            } 
+            else if (discriminant === 0) {
+                const x = -b/(2*a);
+                addStep(`Δ = 0 → Solution double: x = -b/(2a) = ${x}`);
+                document.getElementById("solution").innerHTML = 
+                    `<p>Solution double: <strong>x = ${x}</strong></p>`;
+                plotQuadratic(a, b, c, [x]);
+            } 
+            else {
+                const x1 = (-b + Math.sqrt(discriminant))/(2*a);
+                const x2 = (-b - Math.sqrt(discriminant))/(2*a);
+                addStep(`Δ > 0 → Deux solutions réelles distinctes`);
+                addStep(`x₁ = (-b + √Δ)/(2a) = ${x1}`);
+                addStep(`x₂ = (-b - √Δ)/(2a) = ${x2}`);
+                document.getElementById("solution").innerHTML = `
+                    <p>Solutions réelles:<br>
+                    <strong>x₁ = ${x1.toFixed(2)}</strong><br>
+                    <strong>x₂ = ${x2.toFixed(2)}</strong></p>`;
+                plotQuadratic(a, b, c, [x1, x2]);
+            }
+        }
+
+        function parseSide(side) {
+            let a = 0, b = 0;
+            side = side.replace(/\s+/g, '')
+                      .replace(/([+-])/g, ' $1')
+                      .trim()
+                      .split(' ');
+            
+            for (let term of side) {
+                if (!term) continue;
+                if (term.includes('x')) {
+                    const coeff = term.replace('x', '');
+                    a += coeff === '+' ? 1 : coeff === '-' ? -1 : parseFloat(coeff);
+                } else {
+                    b += parseFloat(term);
+                }
+            }
+            return { a, b };
+        }
+
+        function parseQuadratic(expr) {
+            expr = expr.replace(/\s+/g, '')
+                      .replace(/²/g, '^2')
+                      .replace(/([+-])/g, ' $1')
+                      .trim();
+            
+            let a = 0, b = 0, c = 0;
+            const terms = expr.split(' ');
+            
+            for (let term of terms) {
+                if (!term) continue;
+                if (term.includes('x^2')) {
+                    const coeff = term.replace('x^2', '');
+                    a += coeff === '+' ? 1 : coeff === '-' ? -1 : parseFloat(coeff);
+                } else if (term.includes('x')) {
+                    const coeff = term.replace('x', '');
+                    b += coeff === '+' ? 1 : coeff === '-' ? -1 : parseFloat(coeff);
+                } else {
+                    c += parseFloat(term);
                 }
             }
             
-            // Fonctions utilitaires
-            function parseLinearSide(side) {
-                let a = 0, b = 0;
-                side = side.replace(/\s+/g, '')
-                          .replace(/([+-])/g, ' $1')
-                          .trim();
-                
-                if (!side) return { a: 0, b: 0 };
-                
-                const terms = side.split(' ');
-                for (let term of terms) {
-                    if (!term) continue;
-                    if (term.includes('x')) {
-                        const coeff = term.replace('x', '');
-                        a += parseCoefficient(coeff);
-                    } else {
-                        b += parseFloat(term) || 0;
-                    }
-                }
-                return { a, b };
+            return { a, b, c };
+        }
+
+        function plotLinear(a, b, solutions) {
+            const xValues = [];
+            const yValues = [];
+            
+            for (let x = -10; x <= 10; x += 0.1) {
+                xValues.push(x);
+                yValues.push(a*x + b);
             }
             
-            function parseQuadraticSide(expr) {
-                expr = expr.replace(/\s+/g, '')
-                          .replace(/²/g, '^2')
-                          .replace(/([+-])/g, ' $1')
-                          .trim();
-                
-                let a = 0, b = 0, c = 0;
-                const terms = expr.split(' ');
-                
-                for (let term of terms) {
-                    if (!term) continue;
-                    if (term.includes('x^2')) {
-                        a += parseCoefficient(term.replace('x^2', ''));
-                    } else if (term.includes('x')) {
-                        b += parseCoefficient(term.replace('x', ''));
-                    } else {
-                        c += parseFloat(term) || 0;
-                    }
-                }
-                
-                return { a, b, c };
+            const trace = {
+                x: xValues,
+                y: yValues,
+                type: 'scatter',
+                name: `y = ${a}x + ${b}`
+            };
+            
+            const solutionMarkers = {
+                x: solutions,
+                y: solutions.map(x => a*x + b),
+                mode: 'markers',
+                marker: { size: 12, color: 'red' },
+                name: 'Solution(s)'
+            };
+            
+            Plotly.newPlot('graph', solutions.length ? [trace, solutionMarkers] : [trace], {
+                title: 'Représentation graphique',
+                xaxis: { title: 'x' },
+                yaxis: { title: 'y' }
+            });
+        }
+
+        function plotQuadratic(a, b, c, solutions) {
+            const xValues = [];
+            const yValues = [];
+            
+            for (let x = -10; x <= 10; x += 0.1) {
+                xValues.push(x);
+                yValues.push(a*x*x + b*x + c);
             }
             
-            function parseCoefficient(coeff) {
-                if (coeff === '+') return 1;
-                if (coeff === '-') return -1;
-                if (coeff === '') return 1;
-                return parseFloat(coeff) || 0;
-            }
+            const trace = {
+                x: xValues,
+                y: yValues,
+                type: 'scatter',
+                name: `y = ${a}x² + ${b}x + ${c}`
+            };
             
-            function displaySolution(solution, steps) {
-                const stepsDiv = document.getElementById('solutionSteps');
-                const resultDiv = document.getElementById('finalResult');
-                
-                stepsDiv.innerHTML = '';
-                steps.forEach(step => {
-                    const stepDiv = document.createElement('div');
-                    stepDiv.className = 'step mb-2';
-                    stepDiv.innerHTML = step;
-                    stepsDiv.appendChild(stepDiv);
-                });
-                
-                resultDiv.innerHTML = solution;
-                MathJax.typeset();
-            }
+            const solutionMarkers = {
+                x: solutions,
+                y: solutions.map(x => a*x*x + b*x + c),
+                mode: 'markers',
+                marker: { size: 12, color: 'red' },
+                name: 'Solution(s)'
+            };
             
-            function addToHistory(type, equation, solution) {
-                history.unshift({
-                    type,
-                    equation,
-                    solution,
-                    timestamp: new Date().toISOString()
-                });
-                
-                if (history.length > 20) history.pop();
-                
-                localStorage.setItem('mathHistory', JSON.stringify(history));
-                loadHistory();
-            }
-            
-            function loadHistory() {
-                const historyList = document.getElementById('historyList');
-                historyList.innerHTML = '';
-                
-                if (history.length === 0) {
-                    historyList.innerHTML = '<li class="list-group-item text-center text-muted">Aucun historique</li>';
-                    return;
-                }
-                
-                history.forEach(item => {
-                    const li = document.createElement('li');
-                    li.className = 'list-group-item history-item';
-                    li.innerHTML = `
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <strong>${item.type === 'linear' ? '1er degré' : '2nd degré'}</strong>
-                                <div class="text-truncate">${item.equation}</div>
-                            </div>
-                            <small class="text-muted">${new Date(item.timestamp).toLocaleTimeString()}</small>
-                        </div>
-                    `;
-                    li.addEventListener('click', () => {
-                        document.getElementById('equationInput').value = item.equation;
-                        document.getElementById('equationType').value = item.type;
-                        document.getElementById('solveBtn').click();
-                    });
-                    historyList.appendChild(li);
-                });
-            }
-            
-            // Initialisation de l'outil graphique
-            function initGraphingTool() {
-                // Gestion du type de graphique
-                document.getElementById('graphType').addEventListener('change', function() {
-                    const type = this.value;
-                    document.getElementById('function2dGroup').classList.toggle('d-none', type !== '2d');
-                    document.getElementById('function3dGroup').classList.toggle('d-none', type !== '3d');
-                    document.getElementById('yRangeGroup').classList.toggle('d-none', type !== '3d' && type !== 'parametric');
-                });
-                
-                // Bouton de tracé
-                document.getElementById('plotBtn').addEventListener('click', updateGraph);
-            }
-            
-            function updateGraph() {
-                const type = document.getElementById('graphType').value;
-                const xMin = parseFloat(document.getElementById('xMin').value);
-                const xMax = parseFloat(document.getElementById('xMax').value);
-                
-                try {
-                    if (type === '2d') {
-                        plot2DFunction();
-                    } else if (type === '3d') {
-                        plot3DFunction();
-                    } else {
-                        document.getElementById('graphContainer').innerHTML = `
-                            <div class="alert alert-info m-3">Fonctionnalité en développement</div>
-                        `;
-                    }
-                } catch (error) {
-                    document.getElementById('graphContainer').innerHTML = `
-                        <div class="alert alert-danger m-3">${error.message}</div>
-                    `;
-                }
-            }
-            
-            function plot2DFunction() {
-                const funcExpr = document.getElementById('function2d').value;
-                const xMin = parseFloat(document.getElementById('xMin').value);
-                const xMax = parseFloat(document.getElementById('xMax').value);
-                
-                if (!funcExpr) throw new Error("Veuillez entrer une fonction");
-                
-                const xValues = [];
-                const yValues = [];
-                
-                for (let x = xMin; x <= xMax; x += (xMax - xMin) / 100) {
-                    xValues.push(x);
-                    try {
-                        yValues.push(math.evaluate(funcExpr, { x }));
-                    } catch (e) {
-                        throw new Error("Expression invalide");
-                    }
-                }
-                
-                const trace = {
-                    x: xValues,
-                    y: yValues,
-                    type: 'scatter',
-                    mode: 'lines',
-                    name: `y = ${funcExpr}`
-                };
-                
-                Plotly.newPlot('graphContainer', [trace], {
-                    title: `Graphique de y = ${funcExpr}`,
-                    xaxis: { title: 'x', range: [xMin, xMax] },
-                    yaxis: { title: 'y' },
-                    margin: { t: 40, b: 40 }
-                });
-            }
-            
-            function plot3DFunction() {
-                const funcExpr = document.getElementById('function3d').value;
-                const xMin = parseFloat(document.getElementById('xMin').value);
-                const xMax = parseFloat(document.getElementById('xMax').value);
-                const yMin = parseFloat(document.getElementById('yMin').value);
-                const yMax = parseFloat(document.getElementById('yMax').value);
-                
-                if (!funcExpr) throw new Error("Veuillez entrer une fonction");
-                
-                const xValues = [], yValues = [], zValues = [];
-                
-                for (let x = xMin; x <= xMax; x += (xMax - xMin) / 20) {
-                    for (let y = yMin; y <= yMax; y += (yMax - yMin) / 20) {
-                        xValues.push(x);
-                        yValues.push(y);
-                        try {
-                            zValues.push(math.evaluate(funcExpr, { x, y }));
-                        } catch (e) {
-                            throw new Error("Expression invalide");
-                        }
-                    }
-                }
-                
-                const trace = {
-                    x: xValues,
-                    y: yValues,
-                    z: zValues,
-                    type: 'surface',
-                    name: `z = ${funcExpr}`
-                };
-                
-                Plotly.newPlot('graphContainer', [trace], {
-                    title: `Graphique 3D de z = ${funcExpr}`,
-                    scene: {
-                        xaxis: { title: 'x', range: [xMin, xMax] },
-                        yaxis: { title: 'y', range: [yMin, yMax] },
-                        zaxis: { title: 'z' }
-                    },
-                    margin: { t: 40, b: 40 }
-                });
-            }
-            
-            // Initialisation du chatbot
-            function initChatBot() {
-                const chatContainer = document.getElementById('chatContainer');
-                const chatInput = document.getElementById('chatInput');
-                const sendBtn = document.getElementById('sendChatBtn');
-                const startListeningBtn = document.getElementById('startListening');
-                
-                // Exemples rapides
-                document.querySelectorAll('[data-question]').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        chatInput.value = this.getAttribute('data-question');
-                        sendBtn.click();
-                    });
-                });
-                
-                // Envoi de message
-                sendBtn.addEventListener('click', function() {
-                    const question = chatInput.value.trim();
-                    if (!question) return;
-                    
-                    addChatMessage(question, 'user');
-                    chatInput.value = '';
-                    
-                    // Simuler une réponse (en production, utiliser une API)
-                    setTimeout(() => {
-                        const response = generateBotResponse(question);
-                        addChatMessage(response, 'bot');
-                    }, 1000);
-                });
-                
-                // Reconnaissance vocale
-                startListeningBtn.addEventListener('click', function() {
-                    if ('webkitSpeechRecognition' in window) {
-                        const recognition = new webkitSpeechRecognition();
-                        recognition.lang = 'fr-FR';
-                        recognition.onresult = function(event) {
-                            chatInput.value = event.results[0][0].transcript;
-                            sendBtn.click();
-                        };
-                        recognition.start();
-                    } else {
-                        alert("Reconnaissance vocale non supportée sur ce navigateur");
-                    }
-                });
-            }
-            
-            function addChatMessage(text, sender) {
-                const chatContainer = document.getElementById('chatContainer');
-                const messageDiv = document.createElement('div');
-                
-                messageDiv.className = `chat-message p-3 rounded ${sender === 'user' ? 'user-message' : 'bot-message'}`;
-                messageDiv.innerHTML = text;
-                
-                chatContainer.appendChild(messageDiv);
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }
-            
-            function generateBotResponse(question) {
-                // En production, remplacer par un appel à une API IA
-                const mathKeywords = {
-                    'dérivée': "Pour calculer la dérivée d'une fonction, utilisez la notation f'(x) ou df/dx.",
-                    'intégrale': "Une intégrale se calcule avec ∫ f(x) dx. Voulez-vous un exemple spécifique ?",
-                    'équation': "Je peux résoudre des équations linéaires et quadratiques. Essayez '2x + 3 = 7' ou 'x² - 4 = 0'",
-                    'théorème': "Je connais les théorèmes de Pythagore, Thalès, Bayes, etc. Lequel vous intéresse ?",
-                    'matrice': "Les opérations sur les matrices sont disponibles dans l'onglet Outils."
-                };
-                
-                const lowerQuestion = question.toLowerCase();
-                for (const [keyword, response] of Object.entries(mathKeywords)) {
-                    if (lowerQuestion.includes(keyword)) {
-                        return response;
-                    }
-                }
-                
-                return "Je suis un assistant mathématique. Posez-moi des questions sur les équations, calculs, graphiques, etc.";
-            }
-        });
+            Plotly.newPlot('graph', solutions.length ? [trace, solutionMarkers] : [trace], {
+                title: 'Représentation graphique',
+                xaxis: { title: 'x' },
+                yaxis: { title: 'y' }
+            });
+        }
+
+        function addStep(text) {
+            document.getElementById("steps").innerHTML += `<div class="step">${text}</div>`;
+        }
     </script>
 </body>
 </html>
